@@ -48,3 +48,27 @@ A coleta resultou em apenas 3 das 6 modalidades pretendidas, pois o limite globa
 - Concorrência Eletrônica 35%, 
 - Concorrência Presencial 2% 
 Ocorrendo um desbalanceamento natural do mercado, preservado propositalmente. A classe minoritária, Concorrência Presencial de 50 registros (2%), exigirá atenção no na separação estratificado e na escolha de métricas, como F1 macroe não apenas accuracy.
+
+## Análise Exploratória dos Dados
+Realizei uma pequena análise para verificação dos dados, sendo distribuída em:
+
+### Análise de Distribuição das Categorias
+A fim de saber sobre a distribuição e balanceamento dos dados, foi confirmado um desbalanceamento que considero natual para o mercado de licitações. Sendo preservado propositalmente para refletir a realidade do mercado, mas como consequencia, a métrica que deverá ser adotada na modelagem é F1 macro e não accuracy, para garantir que o desempenho na classe minoritária não seja mascarado.
+
+### Análise do Tamanho dos Textos
+Analisei o campo principal do corpus, "objetoCompra", que são tetos curtos. Sendo uma característica consistente entre as três modalidades e confirma que o campo representa o título e resumo do objeto contratado, e não uma descrição detalhada. Sendo assim, vai justificar o uso do modelo sentence-transformers, que é otimizado para textos curtos de sentença única.
+
+## Nuvem de Palavras
+A análise dos termos mais frequentes permitiu identificar os principais segmentos de contratação presentes no corpus. Observei a predominância de licitações relacionadas a serviços, infraestrutura, saúde e processos de aquisição pública. A recorrência de termos como "Município" e "Secretaria Municipal" indica que a maior parte das oportunidades está concentrada na esfera municipal. Esse resultado fornece uma visão inicial dos mercados mais demandantes e auxilia na definição dos segmentos prioritários para monitoramento e prospecção.
+
+## Valor Estimado por Categoria
+Observei que a distribuição dos valores estimados evidencia diferenças relevantes entre as modalidades de contratação. O Pregão Eletrônico apresenta os maiores valores medianos e concentra o maior volume financeiro do conjunto, seguido pela Concorrência Eletrônica. Já a Concorrência Presencial apresenta valores menores e maior dispersão, indicando utilização em contratações mais específicas. Esses resultados reforçam a importância estratégica do Pregão Eletrônico, não apenas pela frequência de ocorrência, mas também pelo potencial financeiro associado.
+
+## Análise do Número de Editais por Estado - Top 10
+Analisei a distribuição geográfica dos editais publicados e identifiquei uma concentração expressiva na região Sudeste e Sul do país. São Paulo lidera com 581 editais, seguido de Minas Gerais (338), Paraná (289) e Rio Grande do Sul (284). Juntos, esses quatro estados representam mais de 50% do corpus coletado. Esse resultado orienta a estratégia comercial de empresas fornecedoras de concentrar esforços de prospecção nos estados do Sudeste e Sul.
+
+## Análise dos Principais Orgão Compradores - Top 15
+Ao analisar os órgãos com maior volume de editais, revelou uma forte concentração de demanda no setor de saúde pública. Entre os principais compradores destacam-se secretarias estaduais de saúde, fundos municipais de saúde e instituições hospitalares. Esse padrão sugere que a área da saúde representa um dos mercados mais ativos dentro do período analisado, constituindo um segmento de alto interesse para empresas fornecedoras que atuam nesse setor.
+
+## Análise Temporar dos Editais 
+Busquei analisar e entender o comportamento de publicação de editais ao longo dos três dias coletados e identifiquei uma queda expressiva no volume de Pregão Eletrônico ao longo do período do dia 01/06 para o dia 02/06. Concorrência Eletrônica manteve volume relativamente estável (entre 300 e 400 editais por dia), enquanto Concorrência Presencial permaneceu próxima de zero nos três dias. Essa variação no Pregão Eletrônico sugere que o dia de início da semana concentra mais publicações, o que pode ser um padrão operacional comum em órgãos públicos. 
