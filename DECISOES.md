@@ -95,3 +95,21 @@ Optei por não realizar tokenização manual dos textos porque o modelo de embed
 Também não utilizei técnicas como stemming ou lematização. Como os editais possuem muitos termos técnicos, jurídicos e administrativos, considerei mais seguro preservar as palavras em sua forma original para evitar perda de significado.
 Da mesma forma, não utilizei n-grams no pré-processamento. Essa técnica costuma trazer mais benefícios em abordagens tradicionais. Como o modelo MiniLM já consegue capturar contexto e relações semânticas entre palavras durante a geração dos embeddings, considerei desnecessário adicionar.
 A estratégia adotada foi realizar apenas uma limpeza básica dos textos e preservar ao máximo o conteúdo original antes da geração dos embeddings.
+
+# Split dos Dados
+Dividi o dataset em treino (70%) e teste (30%), utilizando "stratify" para preservar a proporção das classes em cada conjunto. O random_state foi fixado em 42 para garantir reprodutibilidade. Não foi utilizado conjunto de validação separado, pois a avaliação dos modelos foi feita diretamente no conjunto de teste.
+
+# Embeddings
+Utilizei o modelo 'paraphrase-multilingual-MiniLM-L12-v2' da biblioteca sentence-transformers para gerar os vetores semânticos dos textos limpos. Os embeddings foram gerados uma única vez e salvos em disco no formato '.npy' para evitar reprocessamento nas execuções seguintes. Cada embedding tem 384 dimensões.
+
+# Escolha dos Modelos de ML
+Testei dois modelos sobre os embeddings: Logistic Regression e Linear SVM. Ambos são modelos lineares adequados para espaços de alta dimensão como embeddings. O LinearSVC foi encapsulado com 'CalibratedClassifierCV' para permitir saída de probabilidades por classe, útil para o Streamlit.
+
+# Resultados — Validação
+A Logistic Regression obteve F1 macro de 0.6471 e o Linear SVM obteve 0.6020. Os dois modelos performaram bem nas classes majoritárias (Pregão Eletrônico F1 0.94, Concorrência Eletrônica F1 0.88), mas falharam na classe minoritária Concorrência Presencial, que representa apenas 2% dos dados. Esse comportamento era esperado dado o desbalanceamento preservado propositalmente.
+
+# Modelo Selecionado
+A Logistic Regression foi escolhida como modelo principal por ter obtido melhor F1 macro na validação. Esse valor de 0.6471 é o baseline oficial para comparação com o LLM no Notebook 2.
+
+# Métrica Principal
+F1 macro foi mantido como métrica oficial por penalizar igualmente o desempenho em todas as classes, independente do tamanho. Accuracy de 91% seria enganosa aqui dado o desbalanceamento.
