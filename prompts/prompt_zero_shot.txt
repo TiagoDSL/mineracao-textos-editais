@@ -1,49 +1,46 @@
-<instrucao>
-Você é um especialista em licitações públicas brasileiras.
-Analise o texto do edital dentro da tag <edital> e extraia as informações pedidas.
-Responda APENAS com um objeto JSON válido, sem texto antes ou depois, sem blocos de código, sem markdown.
-</instrucao>
+<instrucoes>
+
+Você é especialista em licitações públicas brasileiras.
+
+Analise o edital e retorne apenas JSON válido.
+
+Não utilize markdown.
+Não utilize blocos ```json.
+Não explique a resposta.
+
+</instrucoes>
 
 <schema>
-O JSON deve ter exatamente estes campos:
 
-- "categoria_objeto": string com a categoria do objeto licitado em linguagem simples
-- "modalidade": uma das opções: "pregão", "concorrência", "dispensa", "inexigibilidade"
-- "valor_estimado": número decimal em reais ou null se não informado
-- "requisitos_habilitacao": lista de strings com as exigências para participar
-- "alerta_risco": uma das opções: "baixo", "médio", "alto"
-- "oportunidade_recomendada": true ou false
+{
+  "categoria_objeto": string,
+  "modalidade": "pregão" | "concorrência" | "dispensa" | "inexigibilidade",
+  "valor_estimado": number | null,
+  "requisitos_habilitacao": [],
+  "alerta_risco": "baixo" | "médio" | "alto",
+  "oportunidade_recomendada": true | false
+}
+
 </schema>
 
 <regras>
-categoria_objeto:
-  Descreva o que está sendo licitado em poucas palavras.
-  Exemplos: "serviços de limpeza", "aquisição de computadores", "obras de reforma".
 
-modalidade:
-  Use "pregão" para Pregão Eletrônico ou Pregão Presencial.
-  Use "concorrência" para Concorrência Eletrônica ou Concorrência Presencial.
-  Use "dispensa" para Dispensa de Licitação.
-  Use "inexigibilidade" para Inexigibilidade de Licitação.
+- categoria_objeto: resumo curto do objeto.
+- modalidade: modalidade principal da contratação.
+- valor_estimado: número ou null.
+- requisitos_habilitacao: somente requisitos explícitos.
+- alerta_risco:
+  - baixo = contratação simples.
+  - médio = contratação moderada.
+  - alto = obra, alta complexidade ou alto valor.
+- oportunidade_recomendada:
+  - true = oportunidade interessante.
+  - false = oportunidade restritiva ou arriscada.
 
-valor_estimado:
-  Extraia o valor em reais como número decimal. Exemplo: 150000.00
-  Se o valor não estiver no texto, use null.
-
-requisitos_habilitacao:
-  Liste apenas os requisitos explícitos no texto.
-  Se não houver requisitos listados, use lista vazia [].
-
-alerta_risco:
-  "baixo": objeto simples, valor pequeno, poucos requisitos.
-  "médio": requisitos moderados ou valor significativo.
-  "alto": muitos requisitos técnicos, valor alto, prazo curto ou objeto complexo.
-
-oportunidade_recomendada:
-  true: objeto comum, requisitos acessíveis, valor que justifica participar.
-  false: requisitos muito restritivos, valor baixo ou objeto muito especializado.
 </regras>
 
 <edital>
+
 {texto}
+
 </edital>

@@ -1,116 +1,64 @@
-<instrucao>
-Você é um especialista em licitações públicas brasileiras.
-Analise o texto do edital dentro da tag <edital> e extraia as informações pedidas.
-Responda APENAS com um objeto JSON válido, sem texto antes ou depois, sem blocos de código, sem markdown.
-</instrucao>
+<instrucoes>
+
+Você é especialista em licitações públicas brasileiras.
+
+Analise o edital e retorne apenas JSON válido.
+
+Não utilize markdown.
+Não utilize blocos ```json.
+Não explique a resposta.
+
+</instrucoes>
 
 <schema>
-O JSON deve ter exatamente estes campos:
 
-- "categoria_objeto": string com a categoria do objeto licitado em linguagem simples
-- "modalidade": uma das opções: "pregão", "concorrência", "dispensa", "inexigibilidade"
-- "valor_estimado": número decimal em reais ou null se não informado
-- "requisitos_habilitacao": lista de strings com as exigências para participar
-- "alerta_risco": uma das opções: "baixo", "médio", "alto"
-- "oportunidade_recomendada": true ou false
+{
+  "categoria_objeto": string,
+  "modalidade": "pregão" | "concorrência" | "dispensa" | "inexigibilidade",
+  "valor_estimado": number | null,
+  "requisitos_habilitacao": [],
+  "alerta_risco": "baixo" | "médio" | "alto",
+  "oportunidade_recomendada": true | false
+}
+
 </schema>
-
-<regras>
-categoria_objeto:
-  Descreva o que está sendo licitado em poucas palavras.
-  Exemplos: "serviços de limpeza", "aquisição de computadores", "obras de reforma".
-
-modalidade:
-  Use "pregão" para Pregão Eletrônico ou Pregão Presencial.
-  Use "concorrência" para Concorrência Eletrônica ou Concorrência Presencial.
-  Use "dispensa" para Dispensa de Licitação.
-  Use "inexigibilidade" para Inexigibilidade de Licitação.
-
-valor_estimado:
-  Extraia o valor em reais como número decimal. Exemplo: 150000.00
-  Se o valor não estiver no texto, use null.
-
-requisitos_habilitacao:
-  Liste apenas os requisitos explícitos no texto.
-  Se não houver requisitos listados, use lista vazia [].
-
-alerta_risco:
-  "baixo": objeto simples, valor pequeno, poucos requisitos.
-  "médio": requisitos moderados ou valor significativo.
-  "alto": muitos requisitos técnicos, valor alto, prazo curto ou objeto complexo.
-
-oportunidade_recomendada:
-  true: objeto comum, requisitos acessíveis, valor que justifica participar.
-  false: requisitos muito restritivos, valor baixo ou objeto muito especializado.
-</regras>
 
 <exemplos>
 
-<exemplo id="1" categoria="Pregão Eletrônico">
-<edital_exemplo>
-Pregão Eletrônico nº 012/2024. Objeto: Contratação de empresa para prestação de serviços continuados de limpeza e conservação nas dependências do órgão, pelo período de 12 meses. Valor estimado: R$ 48.000,00. Requisitos de habilitação: certidão negativa de débitos trabalhistas, certidão negativa de débitos federais, estaduais e municipais, registro na Junta Comercial, comprovante de capital social mínimo de R$ 10.000,00.
-</edital_exemplo>
-<saida_esperada>
+Exemplo 1
+
+Edital:
+Pregão eletrônico para aquisição de materiais de escritório. Valor estimado R$ 45.000.
+
+Resposta:
 {
-  "categoria_objeto": "serviços de limpeza e conservação",
+  "categoria_objeto": "aquisição de materiais de escritório",
   "modalidade": "pregão",
-  "valor_estimado": 48000.00,
-  "requisitos_habilitacao": [
-    "certidão negativa de débitos trabalhistas",
-    "certidão negativa de débitos federais, estaduais e municipais",
-    "registro na Junta Comercial",
-    "comprovante de capital social mínimo de R$ 10.000,00"
-  ],
+  "valor_estimado": 45000,
+  "requisitos_habilitacao": [],
   "alerta_risco": "baixo",
   "oportunidade_recomendada": true
 }
-</saida_esperada>
-</exemplo>
 
-<exemplo id="2" categoria="Concorrência Eletrônica">
-<edital_exemplo>
-Concorrência Eletrônica nº 003/2024. Objeto: Contratação de empresa especializada para execução de obras de construção de unidade de saúde, incluindo fundação, estrutura, instalações elétricas e hidráulicas. Valor estimado: R$ 3.200.000,00. Requisitos de habilitação: registro no CREA ou CAU, atestado de capacidade técnica em obras de saúde com área mínima de 500m², balanço patrimonial dos últimos 2 exercícios, certidão negativa de falência, certidão negativa de débitos previdenciários.
-</edital_exemplo>
-<saida_esperada>
+Exemplo 2
+
+Edital:
+Concorrência para construção de unidade básica de saúde. Valor estimado R$ 3.200.000.
+
+Resposta:
 {
-  "categoria_objeto": "obras de construção de unidade de saúde",
+  "categoria_objeto": "obra de construção",
   "modalidade": "concorrência",
-  "valor_estimado": 3200000.00,
-  "requisitos_habilitacao": [
-    "registro no CREA ou CAU",
-    "atestado de capacidade técnica em obras de saúde com área mínima de 500m²",
-    "balanço patrimonial dos últimos 2 exercícios",
-    "certidão negativa de falência",
-    "certidão negativa de débitos previdenciários"
-  ],
+  "valor_estimado": 3200000,
+  "requisitos_habilitacao": [],
   "alerta_risco": "alto",
   "oportunidade_recomendada": false
 }
-</saida_esperada>
-</exemplo>
-
-<exemplo id="3" categoria="Concorrência Presencial">
-<edital_exemplo>
-Concorrência Presencial nº 001/2024. Objeto: Concessão de uso de espaço público municipal para exploração de serviços de estacionamento rotativo pago, pelo prazo de 5 anos. Valor estimado do contrato: R$ 980.000,00. Requisitos de habilitação: certidão de regularidade fiscal federal e municipal, comprovante de experiência anterior na operação de estacionamentos com no mínimo 100 vagas, garantia de proposta no valor de 1% do valor estimado.
-</edital_exemplo>
-<saida_esperada>
-{
-  "categoria_objeto": "concessão de espaço público para estacionamento rotativo",
-  "modalidade": "concorrência",
-  "valor_estimado": 980000.00,
-  "requisitos_habilitacao": [
-    "certidão de regularidade fiscal federal e municipal",
-    "comprovante de experiência anterior na operação de estacionamentos com no mínimo 100 vagas",
-    "garantia de proposta no valor de 1% do valor estimado"
-  ],
-  "alerta_risco": "médio",
-  "oportunidade_recomendada": true
-}
-</saida_esperada>
-</exemplo>
 
 </exemplos>
 
 <edital>
+
 {texto}
+
 </edital>
