@@ -1,115 +1,82 @@
 # Decisões
 
-## Corpus
-Escolhido o corpus de editais de licitação do PNCP (Portal Nacional de 
-Contratações Públicas) por ter API pública bem documentada e dados já 
-estruturados com categorização.
-
-## Ambiente
-Python 3.11, ambiente virtual isolado via venv para garantir reprodutibilidade.
-
 ## Notebooks
-Para não ficar um unico notebook muito grande, decidir dividir em 3, coforme etapas. Ficando da seguinte forma:
-- 1_dados_eda_ML.ipynb: coleta dos dados via API do site do PNCP, EDA, pré-processamento dos dados, embeddings, divisão dos dados 15/15/70 e modelo basline (Logistic Regression)+ Randon Forest e LightGBM.
-- 2_llm_pydantic.ipynb: schema pydantic, prompt versionado, tratamento de falha de validação, classificação zero/few-shot via Gemini e comparação.
-- 3_rag_erros.ipynb: indexação no ChromaDB, busca semântica, avaliação de relevância, análise de erros categorizada e estimativa de custos.
 
-## Dados
+Para evitar um único notebook muito grande e facilitar a organização do projeto, optei por dividir o trabalho em três etapas:
 
-### Fonte de Dados
-Utilizado o endpoint /v1/contratacoes/publicacao da API de Consulta do PNCP, que não exige autenticação e permite filtrar por data e modalidade de contratação. Escolhido por ser o endpoint que retorna o objeto da contratação em texto livre, base para a tarefa de classificação por NLP do projeto.
+* **1_dados_eda_ml.ipynb:** coleta dos dados via API do PNCP, análise exploratória, pré-processamento textual, geração de embeddings, divisão dos dados em treino e teste, treinamento e avaliação dos modelos Logistic Regression e Linear SVM.
+* **2_llm_pydantic.ipynb:** definição do schema Pydantic, versionamento dos prompts, tratamento de falhas de validação, classificação zero-shot e few-shot utilizando LLM e comparação com o baseline de Machine Learning.
+* **3_rag_erros.ipynb:** indexação vetorial com ChromaDB, busca semântica via RAG, avaliação de relevância, análise estruturada de erros e estimativa de custos.
 
+---
 
-### API
-Defini o tamamnhoPagina=50,  a documentaçao indica até 500 registros por página, mas depois de fazer alguns testes a API rejeita qualquer valor acima de 50.
+## Split dos Dados
 
+Dividi o dataset em treino (70%) e teste (30%), utilizando o parâmetro `stratify` para preservar a proporção das classes em ambos os conjuntos. O `random_state=42` foi utilizado para garantir a reprodutibilidade dos resultados.
 
-### Escolha das Categorias
-Selecionei apenas as modalidades relevantes do ponto de vista de uma empresa fornecedora: 
-- Pregão Eletrônico (6);
-- Pregão Presencial (7);
-- Concorrência Eletrônica (4);
-- Concorrência Presencial (5); 
-- Dispensa de Licitação (8);
-- Inexigibilidade (9). 
+Não foi criado um conjunto de validação separado, pois a comparação dos modelos foi realizada diretamente sobre o conjunto de teste.
 
-Excluídas modalidades de venda de bens públicos (Leilão) e processos preparatórios sem contrato direto (Manifestação de Interesse, Pré-qualificação, Credenciamento), por não 
-representarem oportunidade de negócio para uma empresa interessada.
+---
 
+## Escolha dos Modelos de Machine Learning
 
-### Estratégia de coleta de dados
-Resolvi utilizar o endpoint /contratacoes/publicacao (histórico) para coletar o corpus de treino do classificador, garantindo volume e diversidade. Para a camada de RAG e a interface de demonstração, utilizei o endpoint /contratacoes/proposta (propostas em aberto), simulando o caso de uso real de uma empresa que busca oportunidades de participação imediata.
+Foram avaliados dois modelos sobre os embeddings gerados pelo MiniLM:
 
+* Logistic Regression
+* Linear SVM
 
-### Escolhas das datas para coleta
-Ao fazer um teste inicial para saber a quantidade de volume de dados que iriar vir, constatei que o volume era muito alto de editais por dia por ter escolhido 3 meses de janela. Então para não tem um volume extraordinário e sem essa necessidade, resovi continuar os testes reduzindo o tempo de 3 meses para 1 mes e deu um volume extraordinário, de 3 meses para 1 mês também foi muito alto, 1 mês para 15 dias também foi alto, 15 dias para 5 dias também foi alto e entao ficou reduzido para 3 dias. Sendo suficiente para superar o minimo exigido, economizar tempo de execução desnecessário e evitando o risco de rate limit da API. Foi entao decidido a coleta dos primeiros dias do mês de Junho de 2026, de 01-06-26 ate 03-06-26.
+A escolha foi motivada pelo fato de ambos serem modelos lineares eficientes para dados representados por embeddings de alta dimensão.
 
+No caso do Linear SVM, foi utilizado o `CalibratedClassifierCV` para permitir a obtenção de probabilidades por classe, recurso útil para futuras integrações na interface Streamlit.
 
-### Classificação dos dados
-Como ja vem um rotulo de classificação, "modalidade_nome", sendo o tipo de processo jurídico e não o que esta sendo comprado. Optei por aproveitar e usar como "categoria", para rotular os dados no dataset bruto.
+---
 
+## Resultados da Modelagem
 
-### Distribuição da categorias coletadas
-A coleta resultou em apenas 3 das 6 modalidades pretendidas, pois o limite global de 3.000 registros foi atingido antes de alcançar as demais modalidades. A distribuição final ficou da seguinte forma: 
-- Pregão Eletrônico 63%, 
-- Concorrência Eletrônica 35%, 
-- Concorrência Presencial 2% 
-Ocorrendo um desbalanceamento natural do mercado, preservado propositalmente. A classe minoritária, Concorrência Presencial de 50 registros (2%), exigirá atenção no na separação estratificado e na escolha de métricas, como F1 macroe não apenas accuracy.
+A Logistic Regression apresentou **F1 Macro de 0,6471**, enquanto o Linear SVM obteve **F1 Macro de 0,6020**.
 
+Os dois modelos apresentaram bom desempenho nas classes majoritárias, mas tiveram dificuldade na classe minoritária **Concorrência Presencial**, que representa apenas 2% do corpus.
 
-## Análise Exploratória dos Dados
-Realizei uma pequena análise para verificação dos dados, sendo distribuída em:
+Esse comportamento era esperado devido ao desbalanceamento natural dos dados, que foi preservado propositalmente para representar o cenário real do mercado de licitações.
 
+---
 
-### Análise de Distribuição das Categorias
-A fim de saber sobre a distribuição e balanceamento dos dados, foi confirmado um desbalanceamento que considero natual para o mercado de licitações. Sendo preservado propositalmente para refletir a realidade do mercado, mas como consequencia, a métrica que deverá ser adotada na modelagem é F1 macro e não accuracy, para garantir que o desempenho na classe minoritária não seja mascarado.
+## Modelo Selecionado
 
+A Logistic Regression foi definida como modelo principal do projeto por apresentar o melhor F1 Macro entre os modelos avaliados.
 
-### Análise do Tamanho dos Textos
-Analisei o campo principal do corpus, "objetoCompra", que são tetos curtos. Sendo uma característica consistente entre as três modalidades e confirma que o campo representa o título e resumo do objeto contratado, e não uma descrição detalhada. Sendo assim, vai justificar o uso do modelo sentence-transformers, que é otimizado para textos curtos de sentença única.
+O valor obtido foi adotado como baseline oficial para comparação com as abordagens baseadas em LLM desenvolvidas no Notebook 2.
 
+---
 
-## Nuvem de Palavras
-A análise dos termos mais frequentes permitiu identificar os principais segmentos de contratação presentes no corpus. Observei a predominância de licitações relacionadas a serviços, infraestrutura, saúde e processos de aquisição pública. A recorrência de termos como "Município" e "Secretaria Municipal" indica que a maior parte das oportunidades está concentrada na esfera municipal. Esse resultado fornece uma visão inicial dos mercados mais demandantes e auxilia na definição dos segmentos prioritários para monitoramento e prospecção.
+## Avaliação com LLM
 
+Para a avaliação dos prompts zero-shot e few-shot foi utilizada uma amostra balanceada das três categorias presentes no conjunto de teste.
 
-## Valor Estimado por Categoria
-Analisei quanto dinheiro está envolvido em cada modalidade e encontrei algo interessante: o Pregão Eletrônico, que é o mais comum, tem os menores valores por contrato (em torno de R$ 300-400 mil). Já a Concorrência Eletrônica e Presencial têm contratos maiores, em torno de R$ 1 milhão, com alguns casos chegando a mais de R$ 100 milhões. Ou seja, quem quer participar de muitos processos deve focar no Pregão, mas quem busca contratos de maior valor deve olhar para a Concorrência Eletrônica.
+A quantidade de exemplos foi limitada pela disponibilidade da classe minoritária **Concorrência Presencial** e pelas restrições de uso da API gratuita utilizada durante os experimentos.
 
+A estratégia permitiu realizar uma comparação consistente entre abordagens supervisionadas e modelos de linguagem, mantendo representatividade das classes avaliadas e garantindo viabilidade operacional do experimento.
 
-## Análise do Número de Editais por Estado - Top 10
-Analisei a distribuição geográfica dos editais publicados e identifiquei uma concentração expressiva na região Sudeste e Sul do país. São Paulo lidera com 581 editais, seguido de Minas Gerais (338), Paraná (289) e Rio Grande do Sul (284). Juntos, esses quatro estados representam mais de 50% do corpus coletado. Esse resultado orienta a estratégia comercial de empresas fornecedoras de concentrar esforços de prospecção nos estados do Sudeste e Sul.
+---
 
+## RAG
 
-## Análise dos Principais Orgão Compradores - Top 15
-Ao analisar os órgãos com maior volume de editais, revelou uma forte concentração de demanda no setor de saúde pública. Entre os principais compradores destacam-se secretarias estaduais de saúde, fundos municipais de saúde e instituições hospitalares. Esse padrão sugere que a área da saúde representa um dos mercados mais ativos dentro do período analisado, constituindo um segmento de alto interesse para empresas fornecedoras que atuam nesse setor.
+A camada de RAG foi construída utilizando os embeddings já gerados anteriormente e armazenados em uma base vetorial ChromaDB.
 
+O objetivo foi simular um cenário real de busca de oportunidades em licitações públicas, permitindo recuperar editais semanticamente semelhantes a partir de consultas em linguagem natural.
 
-## Análise Temporar dos Editais 
-Busquei analisar e entender o comportamento de publicação de editais ao longo dos três dias coletados e identifiquei uma queda expressiva no volume de Pregão Eletrônico ao longo do período do dia 01/06 para o dia 02/06. Concorrência Eletrônica manteve volume relativamente estável (entre 300 e 400 editais por dia), enquanto Concorrência Presencial permaneceu próxima de zero nos três dias. Essa variação no Pregão Eletrônico sugere que o dia de início da semana concentra mais publicações, o que pode ser um padrão operacional comum em órgãos públicos. 
+A avaliação foi realizada por meio de perguntas de teste e análise manual da relevância dos documentos recuperados.
 
+---
 
-# Pré-Processamento de Textual
-Antes de gerar os embeddings, resolvi fazer uma limpeza básica dos textos do campo 'objetoCompra'. Foi realizada a conversão para letras minúsculas, remoção de pontuações e remoção de stopwords da língua portuguesa, reduzindo ruídos e padronizando o corpus.
-Optei por não realizar tokenização manual dos textos porque o modelo de embeddings escolhido já possui tokenizador próprio, executado internamente durante a geração dos vetores. Como os textos seriam convertidos diretamente em embeddings, uma etapa adicional de tokenização não agregaria valor ao pipeline.
-Também não utilizei técnicas como stemming ou lematização. Como os editais possuem muitos termos técnicos, jurídicos e administrativos, considerei mais seguro preservar as palavras em sua forma original para evitar perda de significado.
-Da mesma forma, não utilizei n-grams no pré-processamento. Essa técnica costuma trazer mais benefícios em abordagens tradicionais. Como o modelo MiniLM já consegue capturar contexto e relações semânticas entre palavras durante a geração dos embeddings, considerei desnecessário adicionar.
-A estratégia adotada foi realizar apenas uma limpeza básica dos textos e preservar ao máximo o conteúdo original antes da geração dos embeddings.
+## Análise de Erros
 
-# Split dos Dados
-Dividi o dataset em treino (70%) e teste (30%), utilizando "stratify" para preservar a proporção das classes em cada conjunto. O random_state foi fixado em 42 para garantir reprodutibilidade. Não foi utilizado conjunto de validação separado, pois a avaliação dos modelos foi feita diretamente no conjunto de teste.
+As falhas observadas durante os experimentos foram categorizadas em diferentes grupos, incluindo:
 
-# Embeddings
-Utilizei o modelo 'paraphrase-multilingual-MiniLM-L12-v2' da biblioteca sentence-transformers para gerar os vetores semânticos dos textos limpos. Os embeddings foram gerados uma única vez e salvos em disco no formato '.npy' para evitar reprocessamento nas execuções seguintes. Cada embedding tem 384 dimensões.
+* Erros de classificação;
+* Ambiguidades dos dados;
+* Ruídos textuais;
+* Falhas de validação do schema;
+* Limitações inerentes aos modelos de linguagem.
 
-# Escolha dos Modelos de ML
-Testei dois modelos sobre os embeddings: Logistic Regression e Linear SVM. Ambos são modelos lineares adequados para espaços de alta dimensão como embeddings. O LinearSVC foi encapsulado com 'CalibratedClassifierCV' para permitir saída de probabilidades por classe, útil para o Streamlit.
-
-# Resultados — Validação
-A Logistic Regression obteve F1 macro de 0.6471 e o Linear SVM obteve 0.6020. Os dois modelos performaram bem nas classes majoritárias (Pregão Eletrônico F1 0.94, Concorrência Eletrônica F1 0.88), mas falharam na classe minoritária Concorrência Presencial, que representa apenas 2% dos dados. Esse comportamento era esperado dado o desbalanceamento preservado propositalmente.
-
-# Modelo Selecionado
-A Logistic Regression foi escolhida como modelo principal por ter obtido melhor F1 macro na validação. Esse valor de 0.6471 é o baseline oficial para comparação com o LLM no Notebook 2.
-
-# Métrica Principal
-F1 macro foi mantido como métrica oficial por penalizar igualmente o desempenho em todas as classes, independente do tamanho. Accuracy de 91% seria enganosa aqui dado o desbalanceamento.
+Para cada categoria foi registrada uma hipótese de causa e uma possível ação corretiva, permitindo documentar limitações do sistema e oportunidades de evolução futura.
